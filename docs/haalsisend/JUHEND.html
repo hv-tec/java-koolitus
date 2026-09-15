@@ -1,0 +1,209 @@
+<title>Häälsisend vestlusassistendile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#f6f6fb; --panel:#ffffff; --ink:#1b1b2f; --muted:#5f5f7a; --line:#dcdcea;
+    --accent:#4f46e5; --accent-ink:#ffffff; --rec:#dc2626; --code-bg:#1a1a2a; --code-ink:#e6e6f2; --ok:#15803d;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --bg:#12121c; --panel:#1b1b28; --ink:#ececf4; --muted:#a5a5c0; --line:#2e2e42;
+    --accent:#8b84ff; --accent-ink:#12121c; --rec:#f87171; --code-bg:#0c0c14; --code-ink:#e6e6f2; --ok:#4ade80;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#12121c; --panel:#1b1b28; --ink:#ececf4; --muted:#a5a5c0; --line:#2e2e42;
+    --accent:#8b84ff; --accent-ink:#12121c; --rec:#f87171; --code-bg:#0c0c14; --code-ink:#e6e6f2; --ok:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.55;padding-block:40px 72px;padding-inline:20px}
+  .wrap{max-width:68ch;margin:0 auto}
+  .eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  h1{font-family:"Bricolage Grotesque","Instrument Sans",sans-serif;font-weight:700;font-size:clamp(1.9rem,4.5vw,2.6rem);line-height:1.1;margin:.3em 0 .4em;text-wrap:balance;letter-spacing:-.01em}
+  h2{font-family:"Bricolage Grotesque","Instrument Sans",sans-serif;font-weight:700;font-size:1.3rem;margin:2.2em 0 .6em;text-wrap:balance}
+  p{margin:.6em 0}
+  .lead{font-size:1.1rem;color:var(--muted);max-width:60ch}
+  .flow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:1.4em 0 0;padding:0;list-style:none;font-weight:500}
+  .flow li{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+  .flow li.hi{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .flow .arr{color:var(--muted)}
+  .req{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:1em 0 0}
+  .req div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .req b{display:block;font-weight:600;margin-bottom:2px}
+  .req span{color:var(--muted);font-size:.93rem}
+  ol.steps{list-style:none;padding:0;margin:0;counter-reset:s}
+  ol.steps>li{counter-increment:s;display:grid;grid-template-columns:2.2rem 1fr;gap:12px;padding:16px 0;border-top:1px solid var(--line)}
+  ol.steps>li::before{content:counter(s);font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.3rem;color:var(--accent);line-height:1.2}
+  ol.steps h3{margin:0 0 .3em;font-size:1.05rem;font-weight:600}
+  ol.steps p{margin:.3em 0}
+  code{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:.9em;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+  pre{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:.82rem;line-height:1.5;background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:14px 16px;overflow-x:auto;margin:.6em 0}
+  pre code{background:none;border:0;padding:0;font-size:inherit;color:inherit}
+  .codebox{position:relative}
+  .codebox pre{max-height:420px;overflow:auto}
+  .copy{position:absolute;top:10px;right:10px;font:600 .8rem "Instrument Sans",sans-serif;background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:6px 10px;cursor:pointer}
+  .copy:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .note{border-left:3px solid var(--accent);padding:8px 14px;background:var(--panel);border-radius:0 10px 10px 0;margin:1em 0}
+  dl{margin:0;display:grid;grid-template-columns:1fr;gap:10px}
+  dl div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  dt{font-weight:600}
+  dd{margin:.25em 0 0;color:var(--muted)}
+  .mic{display:inline-block;background:var(--rec);color:#fff;border-radius:6px;padding:0 8px;font-weight:600;font-size:.9em}
+  footer{margin-top:3em;color:var(--muted);font-size:.9rem;border-top:1px solid var(--line);padding-top:1em}
+  @media (prefers-reduced-motion:no-preference){.copy{transition:transform .12s}.copy:active{transform:scale(.96)}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Java + LLM koolitus · boonus · 15 min</div>
+  <h1>Küsi oma andmebaasilt häälega</h1>
+  <p class="lead">Üks HTML-fail Spring Booti sisse: räägid eesti keeles, Chrome muudab kõne tekstiks ja saadab selle sinu <code>POST /api/ask</code> endpointile. Java-koodi ei muuda.</p>
+
+  <ul class="flow" aria-label="Kuidas see töötab">
+    <li class="hi">🎤 Räägid</li><li class="arr">→</li>
+    <li>Chrome: kõne → tekst</li><li class="arr">→</li>
+    <li>POST /api/ask</li><li class="arr">→</li>
+    <li>Gemini → SQL</li><li class="arr">→</li>
+    <li>Vastus ekraanil</li>
+  </ul>
+
+  <h2>Mida on vaja</h2>
+  <div class="req">
+    <div><b>Töötav workshop-rakendus</b><span>nl-to-sql-chat jookseb ja <code>/api/ask</code> vastab Swaggeris</span></div>
+    <div><b>Google Chrome</b><span>kõnetuvastus (Web Speech API) töötab eesti keelega ainult Chrome'is, Safari ei sobi</span></div>
+    <div><b>Mikrofon + internet</b><span>Chrome saadab heli Google'i kõneserverisse, offline ei tööta</span></div>
+  </div>
+
+  <h2>Kolm sammu</h2>
+  <ol class="steps">
+    <li>
+      <h3>Loo fail <code>src/main/resources/static/index.html</code></h3>
+      <p>Kausta <code>static</code> projektis veel pole, loo see. Kleebi faili allolev kood täpselt sellisena. Spring Boot serveerib kõik <code>static</code> kaustas oleva automaatselt aadressilt <code>/</code>.</p>
+    </li>
+    <li>
+      <h3>Taaskäivita rakendus</h3>
+      <p>Peata jooksev <code>bootRun</code> (Ctrl+C) ja käivita uuesti: <code>./gradlew bootRun</code>. Staatilised failid loetakse ainult käivitusel, ilma taaskäivituseta näed 404-i.</p>
+    </li>
+    <li>
+      <h3>Ava Chrome'is <code>http://localhost:8080/</code></h3>
+      <p>Vajuta <span class="mic">🎤 Räägi</span>, luba mikrofon, küsi näiteks <em>„Mitu klienti meil on?"</em>. Kui lause lõpeb, saadetakse küsimus ise ära ja vastus ilmub alla. Enne 4. sammu on vastus SQL-lause, pärast seda lause loomulikus keeles.</p>
+    </li>
+  </ol>
+
+  <h2>Kood</h2>
+  <div class="codebox">
+    <button class="copy" id="copyBtn" type="button">Kopeeri</button>
+    <pre id="codeBlock"><code>&lt;!doctype html&gt;
+&lt;html lang=&quot;et&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;title&gt;Küsi andmebaasilt&lt;/title&gt;
+&lt;style&gt;
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4rem; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  input { flex: 1; min-width: 240px; font-size: 1rem; padding: 10px; border: 1px solid #bbb; border-radius: 8px; }
+  button { font-size: 1rem; padding: 10px 16px; border: 0; border-radius: 8px; background: #4f46e5; color: #fff; cursor: pointer; }
+  button.rec { background: #dc2626; }
+  button:disabled { opacity: .5; cursor: default; }
+  #status { color: #666; min-height: 1.4em; margin-top: 8px; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;Küsi andmebaasilt häälega&lt;/h1&gt;
+&lt;div class=&quot;row&quot;&gt;
+  &lt;input id=&quot;q&quot; placeholder=&quot;Küsimus, nt: Mitu klienti meil on?&quot;&gt;
+  &lt;button id=&quot;mic&quot; type=&quot;button&quot;&gt;🎤 Räägi&lt;/button&gt;
+  &lt;button id=&quot;ask&quot; type=&quot;button&quot;&gt;Küsi&lt;/button&gt;
+&lt;/div&gt;
+&lt;div id=&quot;status&quot;&gt;&lt;/div&gt;
+&lt;pre id=&quot;out&quot;&gt;—&lt;/pre&gt;
+
+&lt;script&gt;
+const $ = id =&gt; document.getElementById(id);
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+async function ask() {
+  const question = $(&#x27;q&#x27;).value.trim();
+  if (!question) return;
+  $(&#x27;status&#x27;).textContent = &#x27;Küsin…&#x27;;
+  $(&#x27;ask&#x27;).disabled = true;
+  try {
+    const r = await fetch(&#x27;/api/ask&#x27;, {
+      method: &#x27;POST&#x27;,
+      headers: { &#x27;Content-Type&#x27;: &#x27;application/json&#x27; },
+      body: JSON.stringify({ question })
+    });
+    const data = await r.json();
+    $(&#x27;out&#x27;).textContent = data.answer ?? JSON.stringify(data, null, 2);
+    $(&#x27;status&#x27;).textContent = r.ok ? &#x27;&#x27; : &#x27;Viga &#x27; + r.status;
+  } catch (e) {
+    $(&#x27;status&#x27;).textContent = &#x27;Viga: &#x27; + e.message;
+  } finally {
+    $(&#x27;ask&#x27;).disabled = false;
+  }
+}
+
+$(&#x27;ask&#x27;).onclick = ask;
+$(&#x27;q&#x27;).addEventListener(&#x27;keydown&#x27;, e =&gt; { if (e.key === &#x27;Enter&#x27;) ask(); });
+
+if (!SR) {
+  $(&#x27;mic&#x27;).disabled = true;
+  $(&#x27;status&#x27;).textContent = &#x27;Kõnetuvastus vajab Chrome\&#x27;i.&#x27;;
+} else {
+  const rec = new SR();
+  rec.lang = &#x27;et-EE&#x27;;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  let listening = false;
+
+  rec.onstart = () =&gt; { listening = true; $(&#x27;mic&#x27;).classList.add(&#x27;rec&#x27;); $(&#x27;mic&#x27;).textContent = &#x27;⏹ Lõpeta&#x27;; $(&#x27;status&#x27;).textContent = &#x27;Kuulan…&#x27;; };
+  rec.onresult = e =&gt; {
+    let text = &#x27;&#x27;;
+    for (const res of e.results) text += res[0].transcript;
+    $(&#x27;q&#x27;).value = text;
+    if (e.results[e.results.length - 1].isFinal) { $(&#x27;status&#x27;).textContent = &#x27;&#x27;; ask(); }
+  };
+  rec.onerror = e =&gt; { $(&#x27;status&#x27;).textContent = &#x27;Kõnetuvastuse viga: &#x27; + e.error; };
+  rec.onend = () =&gt; { listening = false; $(&#x27;mic&#x27;).classList.remove(&#x27;rec&#x27;); $(&#x27;mic&#x27;).textContent = &#x27;🎤 Räägi&#x27;; };
+
+  $(&#x27;mic&#x27;).onclick = () =&gt; { listening ? rec.stop() : rec.start(); };
+}
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+  </div>
+  <div class="note">Oluline rida on <code>rec.lang = 'et-EE'</code>. Ilma selleta tuvastab Chrome inglise keelt ja „mitu klienti" muutub millekski muuks.</div>
+
+  <h2>Kui ei tööta</h2>
+  <dl>
+    <div><dt>Nupp „Räägi" on hall ja kiri „Kõnetuvastus vajab Chrome'i"</dt><dd>Oled Safaris või Firefoxis. Ava sama aadress Chrome'is.</dd></div>
+    <div><dt>Mikrofoni luba ei küsitud või andsid „Keela"</dt><dd>Aadressiribal klõpsa lukuikooni → Mikrofon → Luba, siis värskenda lehte.</dd></div>
+    <div><dt>Viga <code>network</code></dt><dd>Google'i kõneserver pole kättesaadav (VPN, tulemüür, võrk maas). Kirjuta küsimus kasti käsitsi ja vajuta Küsi.</dd></div>
+    <div><dt>Viga <code>not-allowed</code></dt><dd>macOS-is: Süsteemiseaded → Privaatsus ja turvalisus → Mikrofon → luba Chrome.</dd></div>
+    <div><dt>Leht annab 404</dt><dd>Fail on vales kaustas või rakendust ei taaskäivitatud. Tee peab olema täpselt <code>src/main/resources/static/index.html</code>.</dd></div>
+    <div><dt>Vastus on <code>Viga 500</code></dt><dd>Probleem on Java pooles, mitte lehes. Vaata sama küsimust Swaggeris ja rakenduse logi.</dd></div>
+  </dl>
+
+  <h2>Kui tahad ka häälvastust</h2>
+  <p>Macil ja Chrome'is eesti keele sünteeshäält sisseehitatuna ei ole, brauseri <code>speechSynthesis</code> loeb eesti teksti inglise aktsendiga. Korralik eesti hääl tuleb eraldi teenusest (nt <a href="https://jutusta.ee/arendajatele">Jutusta.ee</a>, ElevenLabs-ühilduv API): üks lisaendpoint Javas, mis võtab vastuse teksti ja tagastab WAV-i, ning leht mängib selle ette. Võti jääb serverisse.</p>
+
+  <footer>Java + LLM koolitus, 15.09.2026. Kood on vabalt kasutatav.</footer>
+</div>
+
+<script>
+  const btn = document.getElementById('copyBtn');
+  btn.addEventListener('click', async () => {
+    const text = document.getElementById('codeBlock').innerText;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = 'Kopeeritud';
+    } catch (e) {
+      const r = document.createRange(); r.selectNodeContents(document.getElementById('codeBlock'));
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = 'Vali ja kopeeri ⌘C';
+    }
+    setTimeout(() => btn.textContent = 'Kopeeri', 2500);
+  });
+</script>
