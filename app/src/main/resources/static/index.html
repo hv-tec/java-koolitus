@@ -26,7 +26,8 @@
 </div>
 <label style="display:block;margin-top:8px"><input type="checkbox" id="tts" checked> Loe vastus ette (Jutusta, hääl "Heikki")</label>
 <div id="status"></div>
-<audio id="player" hidden></audio>
+<audio id="player" preload="auto" hidden></audio>
+<button id="listen" type="button" hidden>▶ Kuula vastust</button>
 <pre id="out">—</pre>
 
 <script>
@@ -68,10 +69,14 @@ async function speak(text) {
     const r = await fetch('/api/speak', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
     if (!r.ok) { $('status').textContent = 'Häälväljund ei tööta (' + r.status + ')'; return; }
     const url = URL.createObjectURL(await r.blob());
-    const p = $('player'); p.src = url; p.play();
+    const p = $('player'); p.src = url;
+    $('listen').hidden = true;
+    try { await p.play(); }
+    catch (err) { $('listen').hidden = false; $('status').textContent = 'Chrome ootab klikki, et heli mängida.'; }
   } catch (e) { $('status').textContent = 'Häälväljundi viga: ' + e.message; }
 }
 
+$('listen').onclick = () => { $('listen').hidden = true; $('status').textContent = ''; $('player').play(); };
 $('ask').onclick = ask;
 $('q').addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
 
