@@ -7,11 +7,11 @@ assistant that answers natural-language questions about a database via Gemini (N
 mis vastab andmebaasi kohta esitatud küsimustele loomulikus keeles Gemini abil (NL → SQL → vastus).
 
 ## Tänud / Credits
-Rakenduse alus on koolitaja **Meelise** workshop-mall [meelis-50315/nl-to-sql-chat](https://github.com/meelis-50315/nl-to-sql-chat).
+Rakenduse alus on koolitaja **Meelis Teerni** (lektor/konsultant, BCS Koolitus, meelis.teern@bcs.ee) workshop-mall [meelis-50315/nl-to-sql-chat](https://github.com/meelis-50315/nl-to-sql-chat).
 Koolitus toimus [eesti.ai](https://eesti.ai) koolituste sarjas, 15.09.2026. Aitäh!
 Lisatud on hääl-sisend (Chrome Web Speech API) ja häälvastus (Jutusta.ee TTS), juhend: `docs/haalsisend/`.
 
-The app is based on trainer **Meelis'** workshop starter [meelis-50315/nl-to-sql-chat](https://github.com/meelis-50315/nl-to-sql-chat);
+The app is based on trainer **Meelis Teern's** (lecturer/consultant, BCS Koolitus, meelis.teern@bcs.ee) workshop starter [meelis-50315/nl-to-sql-chat](https://github.com/meelis-50315/nl-to-sql-chat);
 the training was part of the [eesti.ai](https://eesti.ai) course series (15 Sep 2026). Voice input (Chrome Web Speech API) and voice output (Jutusta.ee TTS) added; guide in `docs/haalsisend/`.
 
 ## Struktuur / Structure
