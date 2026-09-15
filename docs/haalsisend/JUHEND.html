@@ -41,6 +41,7 @@
   pre code{background:none;border:0;padding:0;font-size:inherit;color:inherit}
   .codebox{position:relative}
   .codebox pre{max-height:420px;overflow:auto}
+  ol.steps .codebox{margin:.5em 0}
   .copy{position:absolute;top:10px;right:10px;font:600 .8rem "Instrument Sans",sans-serif;background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:6px 10px;cursor:pointer}
   .copy:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
   .note{border-left:3px solid var(--accent);padding:8px 14px;background:var(--panel);border-radius:0 10px 10px 0;margin:1em 0}
@@ -54,7 +55,7 @@
 </style>
 
 <div class="wrap">
-  <div class="eyebrow">Java + LLM koolitus · boonus · 15 min</div>
+  <div class="eyebrow">Java + LLM koolitus · kaks boonust · 15 + 15 min</div>
   <h1>Küsi oma andmebaasilt häälega</h1>
   <p class="lead">Üks HTML-fail Spring Booti sisse: räägid eesti keeles, Chrome muudab kõne tekstiks ja saadab selle sinu <code>POST /api/ask</code> endpointile. Java-koodi ei muuda.</p>
 
@@ -91,7 +92,7 @@
 
   <h2>Kood</h2>
   <div class="codebox">
-    <button class="copy" id="copyBtn" type="button">Kopeeri</button>
+    <button class="copy" data-for="codeBlock" type="button">Kopeeri</button>
     <pre id="codeBlock"><code>&lt;!doctype html&gt;
 &lt;html lang=&quot;et&quot;&gt;
 &lt;head&gt;
@@ -187,24 +188,165 @@ if (!SR) {
     <div><dt>Vastus on <code>Viga 500</code></dt><dd>Probleem on Java pooles, mitte lehes. Vaata sama küsimust Swaggeris ja rakenduse logi.</dd></div>
   </dl>
 
-  <h2>Kui tahad ka häälvastust</h2>
-  <p>Macil ja Chrome'is eesti keele sünteeshäält sisseehitatuna ei ole, brauseri <code>speechSynthesis</code> loeb eesti teksti inglise aktsendiga. Korralik eesti hääl tuleb eraldi teenusest (nt <a href="https://jutusta.ee/arendajatele">Jutusta.ee</a>, ElevenLabs-ühilduv API): üks lisaendpoint Javas, mis võtab vastuse teksti ja tagastab WAV-i, ning leht mängib selle ette. Võti jääb serverisse.</p>
+
+  <h2>Boonus 2: häälvastus (Jutusta.ee)</h2>
+  <p>Nüüd räägib rakendus ka vastu. Kõne sünteesib <a href="https://jutusta.ee/arendajatele">Jutusta.ee</a> (eesti keele TTS, ElevenLabs-ühilduv API). Võti jääb Java poolele, brauser saab ainult heli. Vaja on kolme muudatust: üks uus Java-klass, kaks rida properties-faili ja väike lisa lehele.</p>
+
+  <ol class="steps">
+    <li>
+      <h3>Tee Jutusta konto ja oma võti</h3>
+      <p>Registreeru <a href="https://jutusta.ee">jutusta.ee</a>, arendaja lehelt loo API võti (algab <code>sk_jt_</code>). Igaühel on oma võti, seda ei jagata. Häälte loend: <code>curl -H "xi-api-key: $JUTUSTA_API_KEY" https://jutusta.ee/api/v1/voices</code>. Preset-hääled on nt <code>mari</code>, <code>liina</code>, <code>jaan</code>, <code>mart</code>.</p>
+    </li>
+    <li>
+      <h3>Lisa <code>application.properties</code> lõppu</h3>
+  <div class="codebox">
+    <button class="copy" data-for="propsBlock" type="button">Kopeeri</button>
+    <pre id="propsBlock"><code># Jutusta.ee TTS - voti ja haal keskkonnamuutujast
+jutusta.api-key=${JUTUSTA_API_KEY:}
+jutusta.voice-id=${JUTUSTA_VOICE_ID:mari}</code></pre>
+  </div>
+      <p>Võti ei lähe faili, vaid keskkonnamuutujasse. Käivitamine:</p>
+  <div class="codebox">
+    <button class="copy" data-for="runBlock" type="button">Kopeeri</button>
+    <pre id="runBlock"><code># .env (gitignore&#x27;is!) või terminalis enne käivitust. Võti on isiklik, ära jaga ega commiti.
+export JUTUSTA_API_KEY=sk_jt_...      # oma võti jutusta.ee arendaja lehelt
+export JUTUSTA_VOICE_ID=mari          # preset-hääl; kloonitud hääle puhul selle voice_id
+./gradlew bootRun</code></pre>
+  </div>
+    </li>
+    <li>
+      <h3>Loo <code>src/main/java/com/example/ecommerce/controller/SpeechController.java</code></h3>
+      <p>Uus endpoint <code>POST /api/speak</code>: võtab JSON-i <code>{"text": "..."}</code>, kutsub Jutusta TTS-i ja tagastab WAV-i. Kasutab Spring 6 <code>RestClient</code>-i, lisasõltuvusi pole vaja.</p>
+  <div class="codebox">
+    <button class="copy" data-for="ctrlBlock" type="button">Kopeeri</button>
+    <pre id="ctrlBlock"><code>package com.example.ecommerce.controller;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClient;
+
+import java.util.Map;
+
+/**
+ * Häälväljund: tekst → Jutusta.ee TTS → WAV.
+ * Võti jääb serverisse; brauser saab ainult heli.
+ */
+@RestController
+@RequestMapping(&quot;/api/speak&quot;)
+public class SpeechController {
+
+    private final RestClient client;
+    private final String voiceId;
+    private final boolean enabled;
+
+    public SpeechController(@Value(&quot;${jutusta.api-key}&quot;) String apiKey,
+                            @Value(&quot;${jutusta.voice-id}&quot;) String voiceId) {
+        this.enabled = apiKey != null &amp;&amp; !apiKey.isBlank();
+        this.voiceId = voiceId;
+        this.client = RestClient.builder()
+                .baseUrl(&quot;https://jutusta.ee/api/v1&quot;)
+                .defaultHeader(&quot;xi-api-key&quot;, apiKey == null ? &quot;&quot; : apiKey)
+                .build();
+    }
+
+    public record SpeakRequest(String text) {}
+
+    @PostMapping(produces = &quot;audio/wav&quot;)
+    public ResponseEntity&lt;byte[]&gt; speak(@RequestBody SpeakRequest req) {
+        if (!enabled) {
+            return ResponseEntity.status(503).build();
+        }
+        String text = req.text() == null ? &quot;&quot; : req.text().strip();
+        if (text.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (text.length() &gt; 2000) {
+            text = text.substring(0, 2000);
+        }
+        byte[] wav = client.post()
+                .uri(&quot;/text-to-speech/{voice}?output_format=wav&quot;, voiceId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of(&quot;text&quot;, text, &quot;voice_settings&quot;, Map.of(&quot;speed&quot;, 1.0)))
+                .retrieve()
+                .body(byte[].class);
+        return ResponseEntity.ok()
+                .header(&quot;Content-Type&quot;, &quot;audio/wav&quot;)
+                .body(wav);
+    }
+}
+</code></pre>
+  </div>
+    </li>
+    <li>
+      <h3>Täienda <code>index.html</code></h3>
+      <p>Kolm lisa: linnuke ja peidetud helielement, üks rida <code>ask()</code> sisse ning kaks funktsiooni. Nupp „Kuula vastust" ilmub ainult siis, kui Chrome automaatset mängimist ei luba (see juhtub, kui lehel pole veel klikitud).</p>
+  <div class="codebox">
+    <button class="copy" data-for="jsBlock" type="button">Kopeeri</button>
+    <pre id="jsBlock"><code>// 1) HTML-i, &lt;div id=&quot;status&quot;&gt; ette:
+&lt;label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;tts&quot; checked&gt; Loe vastus ette&lt;/label&gt;
+&lt;audio id=&quot;player&quot; preload=&quot;auto&quot; hidden&gt;&lt;/audio&gt;
+&lt;button id=&quot;listen&quot; type=&quot;button&quot; hidden&gt;▶ Kuula vastust&lt;/button&gt;
+
+// 2) ask() sisse, kohe pärast vastuse näitamist:
+if (r.ok &amp;&amp; $(&#x27;tts&#x27;).checked) speak(spokenForm(data.answer ?? &#x27;&#x27;));
+
+// 3) uued funktsioonid:
+function spokenForm(a) {
+  const t = a.trim();
+  if (t === &#x27;CANNOT_ANSWER&#x27;) return &#x27;Sellele küsimusele ma andmebaasist vastata ei oska.&#x27;;
+  if (/^\s*select\b/i.test(t)) return &#x27;Koostasin SQL-päringu.&#x27;;
+  return t;
+}
+
+async function speak(text) {
+  if (!text) return;
+  try {
+    const r = await fetch(&#x27;/api/speak&#x27;, {
+      method: &#x27;POST&#x27;,
+      headers: { &#x27;Content-Type&#x27;: &#x27;application/json&#x27; },
+      body: JSON.stringify({ text })
+    });
+    if (!r.ok) { $(&#x27;status&#x27;).textContent = &#x27;Häälväljund ei tööta (&#x27; + r.status + &#x27;)&#x27;; return; }
+    const p = $(&#x27;player&#x27;);
+    p.src = URL.createObjectURL(await r.blob());
+    $(&#x27;listen&#x27;).hidden = true;
+    try { await p.play(); }
+    catch (err) { $(&#x27;listen&#x27;).hidden = false; $(&#x27;status&#x27;).textContent = &#x27;Chrome ootab klikki, et heli mängida.&#x27;; }
+  } catch (e) { $(&#x27;status&#x27;).textContent = &#x27;Häälväljundi viga: &#x27; + e.message; }
+}
+
+$(&#x27;listen&#x27;).onclick = () =&gt; { $(&#x27;listen&#x27;).hidden = true; $(&#x27;status&#x27;).textContent = &#x27;&#x27;; $(&#x27;player&#x27;).play(); };</code></pre>
+  </div>
+    </li>
+    <li>
+      <h3>Taaskäivita ja proovi</h3>
+      <p>Küsi häälega „Mis on kõige kallim toode?". Pärast 4. sammu (SQL käivitatakse ja tulemus võetakse kokku) loeb rakendus ette lause, mitte SQL-i. Kiire kontroll ilma leheta: <code>curl -X POST localhost:8080/api/speak -H 'Content-Type: application/json' -d '{"text":"Tere"}' -o tere.wav</code>.</p>
+    </li>
+  </ol>
+  <div class="note">Miks mitte brauseri <code>speechSynthesis</code>? Macil ja Chrome'is pole eesti keele häält, tekst loetaks inglise aktsendiga. Jutusta annab loomuliku eesti häälduse ja saab ka oma häält kloonida.</div>
 
   <footer>Java + LLM koolitus, 15.09.2026. Kood on vabalt kasutatav.</footer>
 </div>
 
 <script>
-  const btn = document.getElementById('copyBtn');
-  btn.addEventListener('click', async () => {
-    const text = document.getElementById('codeBlock').innerText;
-    try {
-      await navigator.clipboard.writeText(text);
-      btn.textContent = 'Kopeeritud';
-    } catch (e) {
-      const r = document.createRange(); r.selectNodeContents(document.getElementById('codeBlock'));
-      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-      btn.textContent = 'Vali ja kopeeri ⌘C';
-    }
-    setTimeout(() => btn.textContent = 'Kopeeri', 2500);
+  document.querySelectorAll('.copy').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const block = document.getElementById(btn.dataset.for);
+      const text = block.innerText;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'Kopeeritud';
+      } catch (e) {
+        const r = document.createRange(); r.selectNodeContents(block);
+        const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        btn.textContent = 'Vali ja kopeeri ⌘C';
+      }
+      setTimeout(() => btn.textContent = 'Kopeeri', 2500);
+    });
   });
 </script>
