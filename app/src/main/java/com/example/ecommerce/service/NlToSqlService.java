@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 public class NlToSqlService {
     private static final String SQL_SYSTEM_PROMPT_TEMPLATE = """
@@ -30,11 +33,14 @@ public class NlToSqlService {
             """;
 
     private static final String SUMMARY_SYSTEM_PROMPT = """
-            
+            You are a helpful assistant for an e-commerce team.
+            Answer the user's question in Estonian in one or two short sentences,
+            using ONLY the query results given. Do not mention SQL or table names.
+            If the results are empty, say that nothing matching was found.
+            Respond as JSON: {"answer": "<text>"}
             """;
 
     private static final String SUMMARY_USER_PROMPT_TEMPLATE = """
-            
             Question: %s
             Results (%d rows): %s
             """;
@@ -51,7 +57,42 @@ public class NlToSqlService {
     }
 
     public AskResponse ask(String userQuestion) {
-        return callLlm(sqlSystemPrompt, userQuestion);
+        validateInput(userQuestion);
+
+        // 1-2: kysimus -> SQL
+        String sql = callLlm(sqlSystemPrompt, userQuestion).answer().strip();
+        if (sql.equalsIgnoreCase("CANNOT_ANSWER")) {
+            return new AskResponse("Sellele küsimusele ma andmebaasist vastata ei oska.");
+        }
+
+        // 3: valideeri - LLM-i valjund on sisend, mida kontrollitakse enne kaivitamist
+        validateSql(sql);
+
+        // 3: kaivita
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
+
+        // 4: tulemus -> loomulik keel
+        String summaryPrompt = SUMMARY_USER_PROMPT_TEMPLATE.formatted(userQuestion, rows.size(), rows.toString());
+        return callLlm(SUMMARY_SYSTEM_PROMPT, summaryPrompt);
+    }
+
+    private void validateInput(String userQuestion) {
+        if (userQuestion == null || userQuestion.isBlank()) {
+            throw new IllegalArgumentException("Input text missing");
+        }
+    }
+
+    private void validateSql(String sql) {
+        String check = sql.replaceAll("(?s)/\\*.*?\\*/", "").replaceAll("--.*", "").strip().toUpperCase();
+        if (!check.startsWith("SELECT")) {
+            throw new IllegalStateException("Generated SQL rejected (not a SELECT): " + sql);
+        }
+        if (check.contains(";")) {
+            throw new IllegalStateException("Generated SQL rejected (multiple statements): " + sql);
+        }
+        if (check.matches("(?s).*\\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|MERGE|TRUNCATE|GRANT|EXEC|CALL)\\b.*")) {
+            throw new IllegalStateException("Generated SQL rejected (forbidden keyword): " + sql);
+        }
     }
 
     private AskResponse callLlm(String systemPrompt, String userPrompt) {
