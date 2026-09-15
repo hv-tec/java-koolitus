@@ -24,7 +24,9 @@
   <button id="mic" type="button">🎤 Räägi</button>
   <button id="ask" type="button">Küsi</button>
 </div>
+<label style="display:block;margin-top:8px"><input type="checkbox" id="tts" checked> Loe vastus ette (Jutusta, hääl "Heikki")</label>
 <div id="status"></div>
+<audio id="player" hidden></audio>
 <pre id="out">—</pre>
 
 <script>
@@ -45,11 +47,29 @@ async function ask() {
     const data = await r.json();
     $('out').textContent = data.answer ?? JSON.stringify(data, null, 2);
     $('status').textContent = r.ok ? '' : 'Viga ' + r.status;
+    if (r.ok && $('tts').checked) speak(spokenForm(data.answer ?? ''));
   } catch (e) {
     $('status').textContent = 'Viga: ' + e.message;
   } finally {
     $('ask').disabled = false;
   }
+}
+
+function spokenForm(a) {
+  const t = a.trim();
+  if (t === 'CANNOT_ANSWER') return 'Sellele küsimusele ma andmebaasist vastata ei oska.';
+  if (/^\s*select\b/i.test(t)) return 'Koostasin SQL-päringu. Tulemuse ettelugemine tuleb pärast neljandat sammu.';
+  return t;
+}
+
+async function speak(text) {
+  if (!text) return;
+  try {
+    const r = await fetch('/api/speak', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+    if (!r.ok) { $('status').textContent = 'Häälväljund ei tööta (' + r.status + ')'; return; }
+    const url = URL.createObjectURL(await r.blob());
+    const p = $('player'); p.src = url; p.play();
+  } catch (e) { $('status').textContent = 'Häälväljundi viga: ' + e.message; }
 }
 
 $('ask').onclick = ask;
