@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Küsi andmebaasilt</title>
+<style>
+  :root { color-scheme: light; }
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4rem; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  input { flex: 1; min-width: 240px; font-size: 1rem; padding: 10px; border: 1px solid #bbb; border-radius: 8px; }
+  button { font-size: 1rem; padding: 10px 16px; border: 0; border-radius: 8px; background: #4f46e5; color: #fff; cursor: pointer; }
+  button.rec { background: #dc2626; }
+  button:disabled { opacity: .5; cursor: default; }
+  #status { color: #666; min-height: 1.4em; margin-top: 8px; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
+</style>
+</head>
+<body>
+<h1>Küsi andmebaasilt häälega</h1>
+<div class="row">
+  <input id="q" placeholder="Küsimus, nt: Mitu klienti meil on?">
+  <button id="mic" type="button">🎤 Räägi</button>
+  <button id="ask" type="button">Küsi</button>
+</div>
+<div id="status"></div>
+<pre id="out">—</pre>
+
+<script>
+const $ = id => document.getElementById(id);
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+async function ask() {
+  const question = $('q').value.trim();
+  if (!question) return;
+  $('status').textContent = 'Küsin…';
+  $('ask').disabled = true;
+  try {
+    const r = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+    const data = await r.json();
+    $('out').textContent = data.answer ?? JSON.stringify(data, null, 2);
+    $('status').textContent = r.ok ? '' : 'Viga ' + r.status;
+  } catch (e) {
+    $('status').textContent = 'Viga: ' + e.message;
+  } finally {
+    $('ask').disabled = false;
+  }
+}
+
+$('ask').onclick = ask;
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
+
+if (!SR) {
+  $('mic').disabled = true;
+  $('status').textContent = 'Kõnetuvastus vajab Chrome\'i.';
+} else {
+  const rec = new SR();
+  rec.lang = 'et-EE';
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  let listening = false;
+
+  rec.onstart = () => { listening = true; $('mic').classList.add('rec'); $('mic').textContent = '⏹ Lõpeta'; $('status').textContent = 'Kuulan…'; };
+  rec.onresult = e => {
+    let text = '';
+    for (const res of e.results) text += res[0].transcript;
+    $('q').value = text;
+    if (e.results[e.results.length - 1].isFinal) { $('status').textContent = ''; ask(); }
+  };
+  rec.onerror = e => { $('status').textContent = 'Kõnetuvastuse viga: ' + e.error; };
+  rec.onend = () => { listening = false; $('mic').classList.remove('rec'); $('mic').textContent = '🎤 Räägi'; };
+
+  $('mic').onclick = () => { listening ? rec.stop() : rec.start(); };
+}
+</script>
+</body>
+</html>
