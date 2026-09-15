@@ -85,13 +85,13 @@ public class NlToSqlService {
     private void validateSql(String sql) {
         String check = sql.replaceAll("(?s)/\\*.*?\\*/", "").replaceAll("--.*", "").strip().toUpperCase();
         if (!check.startsWith("SELECT")) {
-            throw new IllegalStateException("Generated SQL rejected (not a SELECT): " + sql);
+            throw new IllegalArgumentException("Only SELECT queries are allowed. Rejected: " + sql);
         }
         if (check.contains(";")) {
-            throw new IllegalStateException("Generated SQL rejected (multiple statements): " + sql);
+            throw new IllegalArgumentException("Only a single statement is allowed. Rejected: " + sql);
         }
         if (check.matches("(?s).*\\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|MERGE|TRUNCATE|GRANT|EXEC|CALL)\\b.*")) {
-            throw new IllegalStateException("Generated SQL rejected (forbidden keyword): " + sql);
+            throw new IllegalArgumentException("Query contains a forbidden SQL keyword. Rejected: " + sql);
         }
     }
 
