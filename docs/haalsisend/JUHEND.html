@@ -31,11 +31,12 @@
   .req b{display:block;font-weight:600;margin-bottom:2px}
   .req span{color:var(--muted);font-size:.93rem}
   ol.steps{list-style:none;padding:0;margin:0;counter-reset:s}
-  ol.steps>li{counter-increment:s;display:grid;grid-template-columns:2.2rem 1fr;gap:12px;padding:16px 0;border-top:1px solid var(--line)}
-  ol.steps>li::before{content:counter(s);font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.3rem;color:var(--accent);line-height:1.2}
+  ol.steps>li{counter-increment:s;display:grid;grid-template-columns:2.2rem minmax(0,1fr);column-gap:12px;row-gap:4px;padding:16px 0;border-top:1px solid var(--line)}
+  ol.steps>li>*{grid-column:2}
+  ol.steps>li::before{grid-column:1;grid-row:1 / span 5;content:counter(s);font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.3rem;color:var(--accent);line-height:1.2}
   ol.steps h3{margin:0 0 .3em;font-size:1.05rem;font-weight:600}
   ol.steps p{margin:.3em 0}
-  code{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:.9em;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+  code{overflow-wrap:anywhere;font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:.9em;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
   pre{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:.82rem;line-height:1.5;background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:14px 16px;overflow-x:auto;margin:.6em 0}
   pre code{background:none;border:0;padding:0;font-size:inherit;color:inherit}
   .codebox{position:relative}
