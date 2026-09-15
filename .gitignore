@@ -1,0 +1,20 @@
+# saladused — Gemini API võti EI lähe kunagi gitti
+.env
+*.env
+application-local.properties
+application-local.yml
+# handoffid ei lähe GitHubi
+HANDOFF-*.md
+# Java/Maven/Gradle
+target/
+build/
+.gradle/
+*.class
+*.jar
+!**/gradle-wrapper.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
